@@ -7,9 +7,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AppWindowProps } from '../apps/registry';
 import { getApp, getApps } from '../apps/registry';
 import { useVFS } from '../store/vfsStore';
+import { useFS } from '../store/fsStore';
 import { useWindowManager } from '../store/windowManager';
 import { runCommand, type TerminalContext } from './terminalEngine';
 import * as vfs from '../services/vfs';
+import { makeEntryId, guessMime } from '../types/fs';
 
 interface Line {
   kind: 'in' | 'out';
@@ -24,6 +26,7 @@ export default function TerminalApp(_props: AppWindowProps) {
   const remove = useVFS((s) => s.remove);
   const rename = useVFS((s) => s.rename);
   const openWin = useWindowManager((s) => s.open);
+  const openEntry = useFS((s) => s.openEntry);
 
   const [cwdId, setCwdId] = useState(tree.rootId);
   const [lines, setLines] = useState<Line[]>([
@@ -62,36 +65,19 @@ export default function TerminalApp(_props: AppWindowProps) {
           ? vfs.resolvePath(tree, target)
           : vfs.findByName(tree, cwdId, target) ?? vfs.resolvePath(tree, target);
       if (!node) return `open: ${target}: No such file or application`;
-      if (node.kind === 'folder') {
-        openWin({
-          appId: 'finder',
-          title: 'Finder',
-          width: 780,
-          height: 520,
-          payload: { folderId: node.id },
-        });
-        return `Opening folder ${node.name}…`;
-      }
-      if (node.mime?.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)$/i.test(node.name)) {
-        openWin({
-          appId: 'image-viewer',
-          title: node.name,
-          width: 720,
-          height: 520,
-          payload: { fileId: node.id },
-        });
-        return `Opening image ${node.name}…`;
-      }
-      openWin({
-        appId: 'text-editor',
-        title: node.name,
-        width: 700,
-        height: 500,
-        payload: { fileId: node.id },
+      void openEntry({
+        id: makeEntryId('vfs', node.id),
+        name: node.name,
+        kind: node.kind,
+        parentId: node.parentId ? makeEntryId('vfs', node.parentId) : null,
+        providerId: 'vfs',
+        path: vfs.getPath(tree, node.id),
+        mime: node.mime || (node.kind === 'file' ? guessMime(node.name) : undefined),
+        writable: true,
       });
       return `Opening ${node.name}…`;
     },
-    [cwdId, openWin, tree]
+    [cwdId, openEntry, openWin, tree]
   );
 
   const submit = () => {

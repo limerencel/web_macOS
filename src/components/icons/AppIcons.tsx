@@ -6,10 +6,12 @@
  * iconography while remaining visually distinctive.
  */
 
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 import type { AppIconProps } from '../../apps/registry';
 
 function SvgWrap({ className, size = 56, children }: AppIconProps & { children: ReactNode }) {
+  const uid = useId().replace(/:/g, '');
+  const r = 12.3; // ~22% of 56 — macOS squircle-ish corner
   return (
     <svg
       width={size}
@@ -17,9 +19,14 @@ function SvgWrap({ className, size = 56, children }: AppIconProps & { children: 
       viewBox="0 0 56 56"
       className={className}
       xmlns="http://www.w3.org/2000/svg"
-      style={{ borderRadius: size * 0.22 }}
+      style={{ borderRadius: `${Math.round(size * 0.22)}px`, display: 'block', overflow: 'hidden' }}
     >
-      {children}
+      <defs>
+        <clipPath id={`sq-${uid}`}>
+          <rect width="56" height="56" rx={r} ry={r} />
+        </clipPath>
+      </defs>
+      <g clipPath={`url(#sq-${uid})`}>{children}</g>
     </svg>
   );
 }
@@ -162,6 +169,43 @@ export const ImageIcon = ({ className, size = 56 }: AppIconProps) => (
     <circle cx="18" cy="22" r="3.5" fill="#ffd60a" />
     <path d="M6 42 L22 28 L30 34 L44 20 L50 26 L50 46 L6 46 Z" fill="#34c759" />
   </svg>
+);
+
+export const VideoIcon = ({ className, size = 56 }: AppIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 56 56" className={className} xmlns="http://www.w3.org/2000/svg">
+    <rect x="4" y="12" width="36" height="32" rx="4" fill="#1c1c1e" stroke="#636366" strokeWidth="1" />
+    <polygon points="16,20 16,36 30,28" fill="#ff375f" />
+    <path d="M40 20 L52 12 L52 44 L40 36 Z" fill="#ff9f0a" />
+  </svg>
+);
+
+export const PreviewIcon = ({ className, size }: AppIconProps) => (
+  <SvgWrap className={className} size={size}>
+    <defs>
+      <linearGradient id="previewGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stopColor="#bf5af2" />
+        <stop offset="1" stopColor="#5e5ce6" />
+      </linearGradient>
+    </defs>
+    <rect width="56" height="56" rx="12" fill="url(#previewGrad)" />
+    <rect x="10" y="14" width="36" height="28" rx="3" fill="#fff" opacity="0.95" />
+    <circle cx="20" cy="24" r="3" fill="#ffd60a" />
+    <path d="M10 38 L22 28 L30 34 L40 22 L46 28 L46 42 L10 42 Z" fill="#5e5ce6" opacity="0.85" />
+  </SvgWrap>
+);
+
+export const VideoPlayerIcon = ({ className, size }: AppIconProps) => (
+  <SvgWrap className={className} size={size}>
+    <defs>
+      <linearGradient id="vidGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#ff375f" />
+        <stop offset="1" stopColor="#ff9f0a" />
+      </linearGradient>
+    </defs>
+    <rect width="56" height="56" rx="12" fill="url(#vidGrad)" />
+    <circle cx="28" cy="28" r="14" fill="#000" opacity="0.25" />
+    <polygon points="24,18 24,38 40,28" fill="#fff" />
+  </SvgWrap>
 );
 
 /** Generic app icon used by Spotlight when none is registered. */

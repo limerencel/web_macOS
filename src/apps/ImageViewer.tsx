@@ -99,13 +99,19 @@ export default function ImageViewerApp({ windowId, payload }: AppWindowProps) {
   }, [tree]);
 
   const initialIndex = useMemo(() => {
-    const fid = typeof payload?.fileId === 'string' ? payload.fileId : null;
-    if (fid) {
-      const i = gallery.findIndex((g) => g.id === fid);
+    const raw =
+      typeof payload?.entryId === 'string'
+        ? payload.entryId
+        : typeof payload?.fileId === 'string'
+          ? payload.fileId
+          : null;
+    if (raw) {
+      const fid = raw.startsWith('vfs:') ? raw.slice(4) : raw;
+      const i = gallery.findIndex((g) => g.id === fid || g.id === raw);
       if (i >= 0) return i;
     }
     return 0;
-  }, [payload?.fileId, gallery]);
+  }, [payload?.entryId, payload?.fileId, gallery]);
 
   const [index, setIndex] = useState(initialIndex);
   const [zoom, setZoom] = useState(1);

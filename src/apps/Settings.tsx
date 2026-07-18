@@ -13,6 +13,8 @@ import {
 export default function SettingsApp(_props: AppWindowProps) {
   const settings = useSettings((s) => s.settings);
   const update = useSettings((s) => s.update);
+  const clearWallpaperImage = useSettings((s) => s.clearWallpaperImage);
+  const hasCustomWallpaper = Boolean(settings.wallpaperImage);
 
   return (
     <div className="h-full overflow-y-auto bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 p-5" data-testid="settings">
@@ -57,16 +59,40 @@ export default function SettingsApp(_props: AppWindowProps) {
 
       <Section title="Wallpaper">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {hasCustomWallpaper && (
+            <div
+              className="relative rounded-xl overflow-hidden aspect-[16/10] border-2 border-accent ring-2 ring-accent/40"
+              style={{
+                background: `#0b0b0f url("${settings.wallpaperImage}") center center / cover no-repeat`,
+              }}
+              data-testid="settings-wallpaper-custom"
+            >
+              <span
+                className="absolute bottom-0 left-0 right-0 p-1.5 text-[10px] text-white font-medium bg-black/40"
+                style={{ textShadow: '0 1px 2px #000' }}
+              >
+                Custom photo
+              </span>
+              <button
+                type="button"
+                className="absolute top-1 right-1 px-1.5 py-0.5 rounded text-[10px] bg-black/60 text-white hover:bg-black/80"
+                onClick={() => clearWallpaperImage()}
+                data-testid="settings-wallpaper-clear-custom"
+              >
+                Clear
+              </button>
+            </div>
+          )}
           {WALLPAPERS.map((w) => (
             <button
               key={w.id}
               className={`rounded-xl overflow-hidden aspect-[16/10] border-2 ${
-                settings.wallpaper === w.id
+                !hasCustomWallpaper && settings.wallpaper === w.id
                   ? 'border-accent ring-2 ring-accent/40'
                   : 'border-transparent hover:border-white/30'
               }`}
               style={{ background: w.css }}
-              onClick={() => update({ wallpaper: w.id })}
+              onClick={() => update({ wallpaper: w.id, wallpaperImage: null })}
               aria-label={w.label}
               data-testid={`settings-wallpaper-${w.id}`}
             >
@@ -76,6 +102,9 @@ export default function SettingsApp(_props: AppWindowProps) {
             </button>
           ))}
         </div>
+        <p className="mt-2 text-xs text-neutral-500">
+          Tip: open an image in Preview and choose <span className="font-medium">Set as Wallpaper</span>.
+        </p>
       </Section>
 
       <Section title="Accessibility">

@@ -12,20 +12,25 @@ import {
   ImageViewerIcon,
   SettingsIcon,
   AboutIcon,
+  PreviewIcon,
+  VideoPlayerIcon,
 } from '../components/icons/AppIcons';
+import { registerDefaultAssociations } from '../services/fileAssociations';
 
 export function registerAllApps(): void {
+  registerDefaultAssociations();
+
   registerApp({
     id: 'finder',
     name: 'Finder',
     icon: FinderIcon,
     component: lazyApp(() => import('./Finder')),
-    defaultWidth: 780,
-    defaultHeight: 520,
+    defaultWidth: 920,
+    defaultHeight: 580,
     showInDock: true,
     singleInstance: false,
     searchable: true,
-    description: 'Browse files and folders',
+    description: 'Browse virtual and local folders',
   });
 
   registerApp({
@@ -68,6 +73,32 @@ export function registerAllApps(): void {
   });
 
   registerApp({
+    id: 'preview',
+    name: 'Preview',
+    icon: PreviewIcon,
+    component: lazyApp(() => import('./Preview')),
+    defaultWidth: 780,
+    defaultHeight: 560,
+    showInDock: true,
+    singleInstance: false,
+    searchable: true,
+    description: 'View images from virtual or local folders',
+  });
+
+  registerApp({
+    id: 'video-player',
+    name: 'Video Player',
+    icon: VideoPlayerIcon,
+    component: lazyApp(() => import('./VideoPlayer')),
+    defaultWidth: 800,
+    defaultHeight: 560,
+    showInDock: true,
+    singleInstance: false,
+    searchable: true,
+    description: 'Play browser-supported video files',
+  });
+
+  registerApp({
     id: 'image-viewer',
     name: 'Photos',
     icon: ImageViewerIcon,
@@ -77,7 +108,7 @@ export function registerAllApps(): void {
     showInDock: true,
     singleInstance: false,
     searchable: true,
-    description: 'View and browse images',
+    description: 'Bundled gallery and imported images',
   });
 
   registerApp({

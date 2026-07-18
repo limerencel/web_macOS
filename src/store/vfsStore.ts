@@ -30,6 +30,11 @@ interface VFSStoreState {
   search: (query: string) => VFSNode[];
 }
 
+function commit(tree: VFSTree, set: (partial: Partial<VFSStoreState>) => void, get: () => VFSStoreState): void {
+  set({ tree });
+  void persist(VFS_KEY, get().tree);
+}
+
 export const useVFS = create<VFSStoreState>((set, get) => ({
   tree: vfs.createTree(),
   ready: false,
@@ -52,56 +57,44 @@ export const useVFS = create<VFSStoreState>((set, get) => ({
   findByName: (folderId, name) => vfs.findByName(get().tree, folderId, name),
 
   mkdir: (parentId, name) => {
-    const result = vfs.mkdir(get().tree, parentId, name);
-    if (result.ok) {
-      set((s) => ({ tree: vfs.cloneTree(s.tree) }));
-      void persist(VFS_KEY, get().tree);
-    }
+    const tree = vfs.cloneTree(get().tree);
+    const result = vfs.mkdir(tree, parentId, name);
+    if (result.ok) commit(tree, set, get);
     return result;
   },
 
   touch: (parentId, name) => {
-    const result = vfs.touch(get().tree, parentId, name);
-    if (result.ok) {
-      set((s) => ({ tree: vfs.cloneTree(s.tree) }));
-      void persist(VFS_KEY, get().tree);
-    }
+    const tree = vfs.cloneTree(get().tree);
+    const result = vfs.touch(tree, parentId, name);
+    if (result.ok) commit(tree, set, get);
     return result;
   },
 
   write: (id, content) => {
-    const result = vfs.write(get().tree, id, content);
-    if (result.ok) {
-      set((s) => ({ tree: vfs.cloneTree(s.tree) }));
-      void persist(VFS_KEY, get().tree);
-    }
+    const tree = vfs.cloneTree(get().tree);
+    const result = vfs.write(tree, id, content);
+    if (result.ok) commit(tree, set, get);
     return result;
   },
 
   rename: (id, name) => {
-    const result = vfs.rename(get().tree, id, name);
-    if (result.ok) {
-      set((s) => ({ tree: vfs.cloneTree(s.tree) }));
-      void persist(VFS_KEY, get().tree);
-    }
+    const tree = vfs.cloneTree(get().tree);
+    const result = vfs.rename(tree, id, name);
+    if (result.ok) commit(tree, set, get);
     return result;
   },
 
   move: (id, destFolderId) => {
-    const result = vfs.move(get().tree, id, destFolderId);
-    if (result.ok) {
-      set((s) => ({ tree: vfs.cloneTree(s.tree) }));
-      void persist(VFS_KEY, get().tree);
-    }
+    const tree = vfs.cloneTree(get().tree);
+    const result = vfs.move(tree, id, destFolderId);
+    if (result.ok) commit(tree, set, get);
     return result;
   },
 
   remove: (id) => {
-    const result = vfs.remove(get().tree, id);
-    if (result.ok) {
-      set((s) => ({ tree: vfs.cloneTree(s.tree) }));
-      void persist(VFS_KEY, get().tree);
-    }
+    const tree = vfs.cloneTree(get().tree);
+    const result = vfs.remove(tree, id);
+    if (result.ok) commit(tree, set, get);
     return result;
   },
 

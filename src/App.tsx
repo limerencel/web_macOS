@@ -11,11 +11,15 @@ import { Spotlight } from './components/Spotlight';
 import { NotificationCenter } from './components/NotificationCenter';
 import { useSettings } from './store/settingsStore';
 import { useVFS } from './store/vfsStore';
+import { useFS } from './store/fsStore';
 import { useWindowManager } from './store/windowManager';
 import { notify } from './store/notificationsStore';
 import { getApp } from './apps/registry';
 import { registerAllApps } from './apps/registerAll';
 import type { VFSNode } from './types/vfs';
+import { makeEntryId, guessMime } from './types/fs';
+import { fsHub } from './services/fs/hub';
+import { createDemoLocalTree, createMockDirectory } from './services/fs/mockDirectory';
 
 // Side-effect: populate app registry once
 registerAllApps();
@@ -23,9 +27,12 @@ registerAllApps();
 export default function App() {
   const settingsReady = useSettings((s) => s.ready);
   const vfsReady = useVFS((s) => s.ready);
+  const fsReady = useFS((s) => s.ready);
   const initSettings = useSettings((s) => s.init);
   const initVfs = useVFS((s) => s.init);
+  const initFs = useFS((s) => s.init);
   const open = useWindowManager((s) => s.open);
+  const openEntry = useFS((s) => s.openEntry);
   const tree = useVFS((s) => s.tree);
   const mkdir = useVFS((s) => s.mkdir);
   const touch = useVFS((s) => s.touch);
@@ -36,10 +43,56 @@ export default function App() {
   useEffect(() => {
     void (async () => {
       await Promise.all([initSettings(), initVfs()]);
+      await initFs();
       setBooted(true);
       notify('Welcome to WebOS', 'Click dock icons or press Ctrl+Space to search.', 5000);
     })();
-  }, [initSettings, initVfs]);
+  }, [initSettings, initVfs, initFs]);
+
+  // E2E / dev test hooks (no host shell access — mocked FS only)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const api = {
+      mountDemoFolder: async (writeEnabled = false) => {
+        const handle = createDemoLocalTree() as unknown as FileSystemDirectoryHandle;
+        return fsHub.mountTestHandle(handle, {
+          id: 'test-demo-mount',
+          name: 'DemoPhotos',
+          writeEnabled,
+        });
+      },
+      mountMockFolder: async (
+        spec: Parameters<typeof createMockDirectory>[0],
+        opts?: { id?: string; writeEnabled?: boolean; name?: string }
+      ) => {
+        const handle = createMockDirectory(spec) as unknown as FileSystemDirectoryHandle;
+        return fsHub.mountTestHandle(handle, opts);
+      },
+      setMountPermission: async (mountId: string, state: 'granted' | 'denied' | 'prompt') => {
+        const views = fsHub.getMountViews();
+        const m = views.find((x) => x.id === mountId);
+        if (!m) return { ok: false as const, error: 'not found' };
+        // Access internal runtime via request or mark
+        if (state === 'denied' || state === 'prompt') {
+          // Force permission-required by clearing grant through request path mock
+          const local = fsHub.local;
+          const rt = (local as unknown as { mounts: Map<string, { handle: { permission?: string }; permissionState: string }> }).mounts.get(mountId);
+          if (rt?.handle) {
+            (rt.handle as { permission?: PermissionState }).permission = state === 'denied' ? 'denied' : 'prompt';
+          }
+          if (rt) rt.permissionState = 'permission-required';
+          await useFS.getState().refresh();
+          return { ok: true as const, value: 'permission-required' as const };
+        }
+        return fsHub.requestMountPermission(mountId);
+      },
+      getMounts: () => fsHub.getMountViews(),
+    };
+    (window as unknown as { __webosTest?: typeof api }).__webosTest = api;
+    return () => {
+      delete (window as unknown as { __webosTest?: typeof api }).__webosTest;
+    };
+  }, []);
 
   const launchApp = useCallback(
     (appId: string, payload?: Record<string, unknown>) => {
@@ -59,17 +112,19 @@ export default function App() {
 
   const openFile = useCallback(
     (node: VFSNode) => {
-      if (node.kind === 'folder') {
-        launchApp('finder', { folderId: node.id });
-        return;
-      }
-      if (node.mime?.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(node.name)) {
-        launchApp('image-viewer', { fileId: node.id });
-        return;
-      }
-      launchApp('text-editor', { fileId: node.id });
+      const entryId = makeEntryId('vfs', node.id);
+      void openEntry({
+        id: entryId,
+        name: node.name,
+        kind: node.kind,
+        parentId: node.parentId ? makeEntryId('vfs', node.parentId) : null,
+        providerId: 'vfs',
+        path: useVFS.getState().getPath(node.id) || `/${node.name}`,
+        mime: node.mime || (node.kind === 'file' ? guessMime(node.name) : undefined),
+        writable: true,
+      });
     },
-    [launchApp]
+    [openEntry]
   );
 
   const desktopFolderId = Object.values(tree.nodes).find(
@@ -111,7 +166,7 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  if (!booted || !settingsReady || !vfsReady) {
+  if (!booted || !settingsReady || !vfsReady || !fsReady) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-neutral-950 text-white">
         <div className="text-center animate-fade-in">
@@ -130,7 +185,7 @@ export default function App() {
   return (
     <div className="fixed inset-0 overflow-hidden select-none" data-testid="desktop-root">
       <Desktop
-        onOpenFolder={(id) => launchApp('finder', { folderId: id })}
+        onOpenFolder={(id) => launchApp('finder', { folderId: makeEntryId('vfs', id) })}
         onOpenFile={openFile}
         onNewFolder={newDesktopFolder}
         onNewFile={newDesktopFile}

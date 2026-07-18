@@ -82,7 +82,13 @@ export const WALLPAPERS: Wallpaper[] = [
 export interface Settings {
   appearance: Appearance;
   accent: string;
+  /** Preset wallpaper id from WALLPAPERS */
   wallpaper: string;
+  /**
+   * Optional custom desktop image as a data URL.
+   * When set, takes precedence over the preset gradient.
+   */
+  wallpaperImage: string | null;
   reducedMotion: boolean;
   /** Auto-hide dock when false keeps it visible; kept as toggle for future */
   dockAutohide: boolean;
@@ -92,6 +98,7 @@ export const DEFAULT_SETTINGS: Settings = {
   appearance: 'dark',
   accent: 'blue',
   wallpaper: 'aurora',
+  wallpaperImage: null,
   reducedMotion: false,
   dockAutohide: false,
 };
@@ -101,6 +108,20 @@ interface SettingsStoreState {
   ready: boolean;
   init: () => Promise<void>;
   update: (patch: Partial<Settings>) => void;
+  /** Persist an image data URL as the desktop wallpaper. */
+  setWallpaperImage: (dataUrl: string) => void;
+  /** Clear custom image and restore the selected preset gradient. */
+  clearWallpaperImage: () => void;
+}
+
+function wallpaperCss(s: Settings): string {
+  if (s.wallpaperImage) {
+    // Dark fallback under cover image; quote-safe for data: and https: URLs
+    const safe = s.wallpaperImage.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    return `#0b0b0f url("${safe}") center center / cover no-repeat fixed`;
+  }
+  const wp = WALLPAPERS.find((w) => w.id === s.wallpaper) ?? WALLPAPERS[0];
+  return wp.css;
 }
 
 function applySettings(s: Settings): void {
@@ -116,9 +137,7 @@ function applySettings(s: Settings): void {
   }
   root.classList.toggle('dark', dark);
 
-  // Wallpaper
-  const wp = WALLPAPERS.find((w) => w.id === s.wallpaper) ?? WALLPAPERS[0];
-  root.style.setProperty('--wallpaper', wp.css);
+  root.style.setProperty('--wallpaper', wallpaperCss(s));
 
   // Reduced motion
   root.classList.toggle('reduce-motion', s.reducedMotion);
@@ -129,8 +148,8 @@ export const useSettings = create<SettingsStoreState>((set, get) => ({
   ready: false,
 
   init: async () => {
-    const saved = await load<Settings>(SETTINGS_KEY);
-    const merged = saved ? { ...DEFAULT_SETTINGS, ...saved } : DEFAULT_SETTINGS;
+    const saved = await load<Partial<Settings>>(SETTINGS_KEY);
+    const merged: Settings = { ...DEFAULT_SETTINGS, ...saved, wallpaperImage: saved?.wallpaperImage ?? null };
     set({ settings: merged, ready: true });
     applySettings(merged);
     // React to system theme changes when in system mode
@@ -142,7 +161,35 @@ export const useSettings = create<SettingsStoreState>((set, get) => ({
   },
 
   update: (patch) => {
+    // Choosing a preset gradient clears any custom photo wallpaper
+    if (typeof patch.wallpaper === 'string' && patch.wallpaperImage === undefined) {
+      patch = { ...patch, wallpaperImage: null };
+    }
     const next = { ...get().settings, ...patch };
+    set({ settings: next });
+    applySettings(next);
+    void persist(SETTINGS_KEY, next);
+  },
+
+  setWallpaperImage: (dataUrl) => {
+    const next: Settings = {
+      ...get().settings,
+      wallpaperImage: dataUrl,
+      wallpaper: 'custom',
+    };
+    set({ settings: next });
+    applySettings(next);
+    void persist(SETTINGS_KEY, next);
+  },
+
+  clearWallpaperImage: () => {
+    const preset =
+      get().settings.wallpaper === 'custom' ? DEFAULT_SETTINGS.wallpaper : get().settings.wallpaper;
+    const next: Settings = {
+      ...get().settings,
+      wallpaperImage: null,
+      wallpaper: preset,
+    };
     set({ settings: next });
     applySettings(next);
     void persist(SETTINGS_KEY, next);

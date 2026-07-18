@@ -6,26 +6,31 @@
 - [x] Pure VFS service with mkdir/touch/write/rename/move/remove/search + default tree
 - [x] IndexedDB persistence layer (`services/db.ts`)
 - [x] Window manager store (open/close/focus/min/max/move/resize/z-index)
-- [x] Settings store (appearance, accent, wallpaper, reduced motion) + CSS application
-- [x] Notifications store
+- [x] Settings / notifications stores
 - [x] App registry + lazy-loaded app components
-- [x] Original SVG app icons (no proprietary assets)
-- [x] Desktop shell: wallpaper, icons, context menu
-- [x] Menu bar with clock, spotlight trigger, appearance toggle
-- [x] Dock with hover magnification and running indicators
-- [x] Window chrome: traffic lights, drag, 8-way resize
-- [x] Finder (grid/list, breadcrumbs, CRUD)
-- [x] Calculator (keyboard + history)
-- [x] Terminal engine + UI (safe simulated FS)
-- [x] TextEdit (open/edit/save/rename/delete)
-- [x] Photos (bundled SVG gallery, upload, zoom, rotate, prev/next, fullscreen)
-- [x] Settings app UI
-- [x] About This System
-- [x] Spotlight (Ctrl/Cmd+Space)
-- [x] Unit tests: VFS, window manager, calculator, terminal (34 passing)
-- [x] Playwright E2E (11 scenarios passing) + screenshots
-- [x] ESLint clean, production build clean
-- [x] README documentation
+- [x] Desktop shell, menu bar, dock, Spotlight, window chrome
+- [x] Finder, Calculator, Terminal, TextEdit, Photos, Settings, About
+- [x] Unit + Playwright baseline + README
+
+### Local-first upgrade
+
+- [x] `FileSystemProvider` interface + shared `FSEntry` / result types
+- [x] `VirtualFileSystemProvider` wrapping existing VFS + IndexedDB tree
+- [x] `BrowserLocalFolderProvider` (File System Access API)
+- [x] Persist directory handles + mount metadata in IndexedDB (`webos-fs-handles`)
+- [x] Permission check/request on reopen; states: connected / permission-required / unavailable / disconnected
+- [x] Finder Locations sidebar, Connect Folder, sort, refresh, breadcrumbs
+- [x] Central `FileAssociationRegistry`
+- [x] Quick Look (Space / Escape)
+- [x] Preview app (zoom, rotate, fit, actual, prev/next)
+- [x] Video Player app (play/pause, seek, volume, mute, fullscreen, speed, prev/next)
+- [x] TextEdit open/save authorized local text files
+- [x] Recent files + recent mounts
+- [x] Object URL manager; revoke on window close
+- [x] Read-only default + write toggle; confirm delete; no recursive local delete
+- [x] Unit tests: associations, object URLs, virtual + local providers
+- [x] Playwright: mock mount, navigate, preview, video UI, Quick Look, permission error
+- [x] README: browser support, permissions, privacy, limitations
 
 ## Remaining / future ideas
 
@@ -33,26 +38,30 @@
 - [ ] Desktop icon free-form positioning
 - [ ] Trash / undo for deletes
 - [ ] Split-pane Finder
+- [ ] Local folder rename (directories) + recursive delete with strong confirm
 - [ ] More terminal commands (cp, mv, head)
 - [ ] Keyboard window management (cycle apps)
+- [ ] Native/desktop FS provider bridge
 
 ## Decisions
 
 | Decision | Rationale |
 |----------|-----------|
 | Pure VFS + Zustand wrapper | Keeps filesystem logic unit-testable without React |
-| Lazy app components via registry | Code-splitting; single place to add apps |
-| IndexedDB key-value store | Simple, durable, no external services |
+| FileSystemProvider hub | Finder/apps never touch browser FS APIs; backends replaceable |
+| Local mounts default read-only | Explicit least-privilege; write is opt-in |
+| File Association registry | Single open-with path for Desktop, Finder, Terminal, Spotlight, Quick Look |
+| Object URL owner = windowId | Leak-free media when windows close |
+| Mock directory + `__webosTest` | Playwright CI without real folder picker |
 | CSS gradient wallpapers only | Avoid copyrighted images; zero network assets |
 | No host shell in Terminal | Security boundary — simulated FS only |
-| Single-instance for Calculator/Settings/About | Matches desktop UX expectations |
-| Window drag handle integrated into title bar | Avoid overlay intercepting traffic-light clicks |
 
 ## Known issues
 
+- jsdom lacks `Blob.arrayBuffer`/`text`; production Chromium is fine — providers use FileReader helpers for tests.
+- Empty sample `.webm` in demo mount may show a decode error in Video Player (UI still verified).
 - Large image data-URLs can stress IndexedDB quota (browser-dependent).
 - Tablet touch resize handles are small; acceptable for MVP.
-- Welcome notification fires on every cold boot (including first visit after IDB clear).
 
 ## Verification log
 
@@ -61,6 +70,6 @@
 | `npm install` | pass |
 | `npm run build` | pass |
 | `npm run lint` | pass |
-| `npm test` | pass (34) |
-| `npm run test:e2e` | pass (11) |
+| `npm test` | pass |
+| `npm run test:e2e` | pass |
 | Screenshots | `screenshots/*.png` |

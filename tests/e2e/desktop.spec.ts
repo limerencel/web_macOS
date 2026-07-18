@@ -21,11 +21,23 @@ async function launchFromDock(page: Page, name: string) {
 
 test.describe('WebOS desktop', () => {
   test.beforeEach(async ({ page }) => {
-    // Fresh storage each test
+    // Fresh storage each test — wait for IDB delete to finish
     await page.goto('/');
-    await page.evaluate(() => {
+    await page.evaluate(async () => {
+      const del = (name: string) =>
+        new Promise<void>((resolve) => {
+          try {
+            const req = indexedDB.deleteDatabase(name);
+            req.onsuccess = () => resolve();
+            req.onerror = () => resolve();
+            req.onblocked = () => resolve();
+          } catch {
+            resolve();
+          }
+        });
+      await del('webos-store');
+      await del('webos-fs-handles');
       try {
-        indexedDB.deleteDatabase('webos-store');
         localStorage.clear();
       } catch {
         /* ignore */
@@ -161,6 +173,8 @@ test.describe('WebOS desktop', () => {
     await input.press('Enter');
     await expect(page.getByTestId('terminal')).toContainText('PersistMe.txt');
 
+    // Allow IndexedDB persist transaction to commit
+    await page.waitForTimeout(500);
     await page.reload();
     await waitDesktop(page);
     await launchFromDock(page, 'Terminal');
