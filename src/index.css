@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --accent-rgb: 10 132 255;
+  --wallpaper: linear-gradient(135deg, #1a2a6c 0%, #b21f1f 50%, #fdbb2d 100%);
+  color-scheme: light dark;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Prevent overscroll bounce from revealing blank chrome */
+body {
+  overscroll-behavior: none;
+  background: #000;
+  user-select: none;
+}
+
+/* Allow selection inside editors/terminals */
+textarea,
+input,
+[data-testid='terminal'],
+[data-testid='editor-textarea'] {
+  user-select: text;
+}
+
+/* Reduced motion */
+html.reduce-motion *,
+html.reduce-motion *::before,
+html.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.4);
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.6);
+  background-clip: content-box;
+}
+
+/* Tablet-friendly touch targets for window controls */
+@media (max-width: 900px) {
+  [aria-label='Close'],
+  [aria-label='Minimize'],
+  [aria-label='Maximize'] {
+    width: 14px;
+    height: 14px;
+  }
+}
