@@ -11,9 +11,14 @@ import { createPortal } from 'react-dom';
 import { getDockApps, getApp } from '../apps/registry';
 import { useWindowManager } from '../store/windowManager';
 import { useSettings } from '../store/settingsStore';
+import { RemoteAppIcon } from './RemoteAppIcon';
+import type { RemoteApp } from '../types/dashboard';
 
 interface DockProps {
   onLaunch: (appId: string) => void;
+  remoteApps: RemoteApp[];
+  onLaunchRemote: (app: RemoteApp) => void;
+  onOpenLaunchpad: () => void;
 }
 
 const ICON_SIZE = 50;
@@ -52,7 +57,7 @@ function tipsEqual(a: TipState | null, b: TipState | null): boolean {
   );
 }
 
-export function Dock({ onLaunch }: DockProps) {
+export function Dock({ onLaunch, remoteApps, onLaunchRemote, onOpenLaunchpad }: DockProps) {
   const apps = getDockApps();
   const windows = useWindowManager((s) => s.windows);
   const restore = useWindowManager((s) => s.restore);
@@ -230,6 +235,17 @@ export function Dock({ onLaunch }: DockProps) {
             </button>
           );
         })}
+        <span className="dock-separator" aria-hidden />
+        <DockShortcut label="Open Launchpad" onClick={onOpenLaunchpad} testId="dock-launchpad">
+          <span className="dock-launchpad-grid" aria-hidden>
+            {Array.from({ length: 9 }).map((_, index) => <i key={index} />)}
+          </span>
+        </DockShortcut>
+        {remoteApps.filter((app) => app.pinnedToDock).map((app) => (
+          <DockShortcut key={app.id} label={`Launch ${app.name}`} onClick={() => onLaunchRemote(app)} testId={`dock-remote-${app.id}`}>
+            <RemoteAppIcon app={app} size={ICON_SIZE} />
+          </DockShortcut>
+        ))}
       </div>
 
       {tip &&
@@ -249,5 +265,34 @@ export function Dock({ onLaunch }: DockProps) {
           document.body
         )}
     </div>
+  );
+}
+
+function DockShortcut({
+  label,
+  onClick,
+  testId,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  testId: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      className="dock-item dock-static-item"
+      aria-label={label}
+      title={label.replace(/^Launch /, '')}
+      onClick={onClick}
+      data-testid={testId}
+      style={{ marginLeft: BASE_MARGIN, marginRight: BASE_MARGIN }}
+    >
+      <span className="dock-icon-stage" style={{ width: ICON_SIZE, height: ICON_SIZE }}>
+        <span className="dock-icon-face">{children}<span className="dock-icon-shine" aria-hidden /></span>
+      </span>
+      <span className="dock-dot" aria-hidden />
+    </button>
   );
 }

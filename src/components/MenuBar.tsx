@@ -15,10 +15,14 @@ interface MenuBarProps {
   onSpotlight: () => void;
   onOpenAbout: () => void;
   onOpenSettings: () => void;
+  onLock: () => void;
+  onShutdown: () => void;
+  onRestart: () => void;
 }
 
-export function MenuBar({ onSpotlight, onOpenAbout, onOpenSettings }: MenuBarProps) {
+export function MenuBar({ onSpotlight, onOpenAbout, onOpenSettings, onLock, onShutdown, onRestart }: MenuBarProps) {
   const [now, setNow] = useState(new Date());
+  const [systemMenu, setSystemMenu] = useState(false);
   const windows = useWindowManager((s) => s.windows);
   const topZ = useWindowManager((s) => s.topZ);
   const appearance = useSettings((s) => s.settings.appearance);
@@ -45,8 +49,8 @@ export function MenuBar({ onSpotlight, onOpenAbout, onOpenSettings }: MenuBarPro
     <div className="fixed top-0 left-0 right-0 h-7 z-[10000] bg-black/20 dark:bg-black/40 backdrop-blur-2xl text-white text-xs flex items-center px-3 select-none border-b border-white/5">
       <button
         className="flex items-center gap-1.5 hover:bg-white/10 rounded px-1.5 py-0.5 font-semibold"
-        onClick={onOpenAbout}
-        aria-label="About WebOS"
+        onClick={() => setSystemMenu((open) => !open)}
+        aria-label="WebOS menu"
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
           <circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" strokeWidth="1.2" />
@@ -55,12 +59,31 @@ export function MenuBar({ onSpotlight, onOpenAbout, onOpenSettings }: MenuBarPro
         <span>WebOS</span>
       </button>
 
+      {systemMenu && (
+        <div className="system-menu" role="menu">
+          <button onClick={() => { setSystemMenu(false); onOpenAbout(); }}>About This WebOS</button>
+          <button onClick={() => { setSystemMenu(false); onOpenSettings(); }}>System Settings…</button>
+          <div />
+          <button onClick={() => { setSystemMenu(false); onLock(); }}>Lock Screen</button>
+          <button onClick={() => { setSystemMenu(false); onRestart(); }}>Restart…</button>
+          <button onClick={() => { setSystemMenu(false); onShutdown(); }}>Shut Down…</button>
+        </div>
+      )}
+
       <span className="ml-3 font-semibold">{focused?.title ?? 'Desktop'}</span>
 
       <div className="flex-1" />
 
       <div className="flex items-center gap-2">
         {/* Appearance quick toggle */}
+        <button
+          className="hover:bg-white/10 rounded px-1.5 py-0.5"
+          onClick={onLock}
+          aria-label="Lock WebOS"
+          title="Lock WebOS"
+        >
+          ◉
+        </button>
         <button
           className="hover:bg-white/10 rounded px-1.5 py-0.5"
           onClick={() => update({ appearance: appearance === 'dark' ? 'light' : 'dark' })}

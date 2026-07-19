@@ -4,12 +4,19 @@
   "version": "1.0.0",
   "type": "module",
   "description": "A browser-based desktop operating system inspired by macOS",
+  "engines": {
+    "node": ">=24.10.0"
+  },
   "scripts": {
-    "dev": "vite",
+    "dev": "node server/dev.mjs",
+    "dev:web": "vite",
+    "server": "node server/index.mjs",
+    "start": "node server/index.mjs",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --max-warnings 0",
-    "test": "vitest run",
+    "test": "vitest run && node --test tests/server/*.test.mjs",
+    "test:server": "node --test tests/server/*.test.mjs",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed"

@@ -15,6 +15,14 @@ async function waitDesktop(page: Page) {
   await page.waitForTimeout(400);
 }
 
+async function unlock(page: Page) {
+  const lock = page.getByTestId('lock-screen');
+  await lock.waitFor({ state: 'visible', timeout: 15_000 });
+  await page.getByTestId('lock-password').fill('WebOS-Test-Password-123');
+  await page.getByRole('button', { name: 'Unlock WebOS' }).click();
+  await waitDesktop(page);
+}
+
 async function launchFromDock(page: Page, name: string) {
   await page.getByRole('button', { name: `Launch ${name}` }).click();
 }
@@ -44,7 +52,7 @@ test.describe('WebOS desktop', () => {
       }
     });
     await page.reload();
-    await waitDesktop(page);
+    await unlock(page);
   });
 
   test('loads desktop and captures screenshot', async ({ page }) => {
@@ -52,6 +60,15 @@ test.describe('WebOS desktop', () => {
     await expect(page.getByRole('button', { name: 'Launch Finder' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Launch Calculator' })).toBeVisible();
     await shot(page, '01-desktop');
+  });
+
+  test('locks and unlocks the private desktop', async ({ page }) => {
+    await page.getByRole('button', { name: 'WebOS menu' }).click();
+    await page.getByRole('button', { name: 'Lock Screen' }).click();
+    await expect(page.getByTestId('lock-screen')).toBeVisible();
+    await shot(page, '00-lock-screen');
+    await unlock(page);
+    await expect(page.getByTestId('desktop-root')).toBeVisible();
   });
 
   test('opens, focuses, minimizes, maximizes, and closes windows', async ({ page }) => {
@@ -192,8 +209,33 @@ test.describe('WebOS desktop', () => {
     await expect(page.getByTestId('calculator')).toBeVisible({ timeout: 10_000 });
   });
 
+  test('adds and persists a dashboard application', async ({ page }) => {
+    await page.getByTestId('dock-launchpad').click();
+    await expect(page.getByTestId('launchpad')).toBeVisible();
+    await shot(page, '15-launchpad');
+    await page.getByTestId('launchpad-add-app').click();
+    await expect(page.getByTestId('app-manager')).toBeVisible();
+    await shot(page, '16-app-manager');
+    await page.getByTestId('app-name').fill('E2E Notes');
+    await page.getByTestId('app-url').fill('https://notes.example.com');
+    await page.getByText('Keep in Dock').click();
+    await page.getByTestId('app-save').click();
+    await expect(page.getByTestId('app-manager')).toHaveCount(0);
+
+    await page.getByTestId('dock-launchpad').click();
+    await expect(page.getByText('E2E Notes', { exact: true })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('button', { name: 'Launch E2E Notes' })).toBeVisible();
+
+    await page.reload();
+    await waitDesktop(page);
+    await page.getByTestId('dock-launchpad').click();
+    await expect(page.getByText('E2E Notes', { exact: true })).toBeVisible();
+  });
+
   test('about window', async ({ page }) => {
-    await page.getByRole('button', { name: 'About WebOS' }).click();
+    await page.getByRole('button', { name: 'WebOS menu' }).click();
+    await page.getByRole('button', { name: 'About This WebOS' }).click();
     await expect(page.getByTestId('about')).toBeVisible();
     await shot(page, '08-about');
   });

@@ -11,12 +11,16 @@ import { getApps } from '../apps/registry';
 import { useVFS } from '../store/vfsStore';
 import type { VFSNode } from '../types/vfs';
 import { GenericAppIcon } from './icons/AppIcons';
+import { useDashboard } from '../store/dashboardStore';
+import { RemoteAppIcon } from './RemoteAppIcon';
+import type { RemoteApp } from '../types/dashboard';
 
 interface SpotlightProps {
   open: boolean;
   onClose: () => void;
   onLaunchApp: (appId: string, payload?: Record<string, unknown>) => void;
   onOpenFile: (node: VFSNode) => void;
+  onLaunchRemote: (app: RemoteApp) => void;
 }
 
 interface ResultRow {
@@ -28,14 +32,16 @@ interface ResultRow {
   payload?: Record<string, unknown>;
   fileNode?: VFSNode;
   appId?: string;
+  remoteApp?: RemoteApp;
 }
 
-export function Spotlight({ open, onClose, onLaunchApp, onOpenFile }: SpotlightProps) {
+export function Spotlight({ open, onClose, onLaunchApp, onOpenFile, onLaunchRemote }: SpotlightProps) {
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const search = useVFS((s) => s.search);
   const getPath = useVFS((s) => s.getPath);
+  const remoteApps = useDashboard((s) => s.apps);
 
   const results = useMemo<ResultRow[]>(() => {
     const q = query.trim().toLowerCase();
@@ -53,6 +59,17 @@ export function Spotlight({ open, onClose, onLaunchApp, onOpenFile }: SpotlightP
         });
       }
     }
+    for (const app of remoteApps) {
+      if (`${app.name} ${app.description} ${app.category}`.toLowerCase().includes(q)) {
+        rows.push({
+          kind: 'app',
+          id: `remote-${app.id}`,
+          title: app.name,
+          subtitle: `${app.category} · ${app.description || app.url}`,
+          remoteApp: app,
+        });
+      }
+    }
     for (const node of search(query)) {
       rows.push({
         kind: 'file',
@@ -63,7 +80,7 @@ export function Spotlight({ open, onClose, onLaunchApp, onOpenFile }: SpotlightP
       });
     }
     return rows.slice(0, 10);
-  }, [query, search, getPath]);
+  }, [query, search, getPath, remoteApps]);
 
   useEffect(() => {
     if (!open) return;
@@ -76,7 +93,8 @@ export function Spotlight({ open, onClose, onLaunchApp, onOpenFile }: SpotlightP
   useEffect(() => setSelected(0), [query]);
 
   const launch = (row: ResultRow) => {
-    if (row.kind === 'app' && row.appId) onLaunchApp(row.appId);
+    if (row.remoteApp) onLaunchRemote(row.remoteApp);
+    else if (row.kind === 'app' && row.appId) onLaunchApp(row.appId);
     else if (row.kind === 'file' && row.fileNode) onOpenFile(row.fileNode);
     onClose();
   };
@@ -136,6 +154,7 @@ export function Spotlight({ open, onClose, onLaunchApp, onOpenFile }: SpotlightP
                 <div className="shrink-0 w-7 h-7 flex items-center justify-center">
                   {row.kind === 'app' ? (
                     (() => {
+                      if (row.remoteApp) return <RemoteAppIcon app={row.remoteApp} size={24} />;
                       const app = getApps().find((a) => a.id === row.appId);
                       return app ? <app.icon size={24} /> : <GenericAppIcon size={24} />;
                     })()

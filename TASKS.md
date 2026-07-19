@@ -2,6 +2,22 @@
 
 ## Completed
 
+### Private dashboard upgrade
+
+- [x] Node.js HTTP backend using built-in SQLite
+- [x] Single-owner first-run setup with one-time setup token
+- [x] Argon2id password hashing and server-side sessions
+- [x] Secure, HttpOnly, SameSite session cookie and CSRF checks
+- [x] macOS-style lock screen, unlock, inactivity lock, restart and shutdown states
+- [x] Protected applications, settings, profile, and icon APIs
+- [x] Dynamic Launchpad with add, edit, delete, category, search, and reorder
+- [x] Uploaded and preset application icons
+- [x] Remote application launch modes: external, embedded, current tab
+- [x] Dynamic Dock pins and Spotlight results
+- [x] Backend settings sync with IndexedDB offline cache
+- [x] Docker image, Compose volume, health check, and deployment documentation
+- [x] Server API and browser dashboard tests
+
 - [x] Scaffold Vite + React + TypeScript + Tailwind + Zustand + Vitest + Playwright
 - [x] Pure VFS service with mkdir/touch/write/rename/move/remove/search + default tree
 - [x] IndexedDB persistence layer (`services/db.ts`)
@@ -33,6 +49,12 @@
 - [x] README: browser support, permissions, privacy, limitations
 
 ## Remaining / future ideas
+
+- [ ] Server health and hardware monitoring integrations
+- [ ] Passkeys and optional multi-factor authentication
+- [ ] Downstream application SSO integration
+- [ ] Server-backed Finder storage
+- [ ] PWA and mobile-specific shell
 
 - [ ] Persist window positions across reload
 - [ ] Desktop icon free-form positioning

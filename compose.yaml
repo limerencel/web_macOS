@@ -1,0 +1,18 @@
+services:
+  webos:
+    build: .
+    container_name: webos
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      WEBOS_SECURE_COOKIES: "true"
+      # Set this when the reverse proxy origin cannot be inferred automatically.
+      # WEBOS_APP_ORIGIN: "https://home.example.com"
+      # Optional fixed first-run token. A random token is printed when omitted.
+      # WEBOS_SETUP_TOKEN: "replace-with-a-long-random-value"
+    volumes:
+      - webos-data:/app/data
+
+volumes:
+  webos-data:

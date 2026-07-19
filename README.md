@@ -1,12 +1,18 @@
 # WebOS
 
-A polished **local-first** browser desktop environment inspired by macOS interaction patterns. Built entirely with web technologies — no server, no host shell access, no external databases.
+A private, single-user browser desktop and self-hosted application dashboard inspired by macOS interaction patterns. WebOS combines a React desktop shell with a small Node.js and SQLite backend.
 
 Virtual files live in IndexedDB. Optional **local folders** are mounted through the browser File System Access API, always behind an explicit user picker.
+
+Dashboard applications, account details, shared appearance settings, icons, and sessions live in the server data directory and follow the owner across devices.
 
 ![Desktop](screenshots/01-desktop.png)
 
 ## Features
+
+- **Private lock screen** — single-owner setup, Argon2id password hashing, protected server sessions, inactivity lock, restart and shutdown states
+- **Launchpad dashboard** — add, edit, categorize, reorder, pin, search, and launch self-hosted applications without changing source code
+- **Persistent backend** — SQLite application/settings data and protected uploaded icons, designed for a Docker volume
 
 - **Desktop shell** — wallpaper, selectable icons, context menu, live clock, top menu bar, magnifying dock
 - **Window manager** — open, close, minimize, maximize, focus, z-index stacking, drag, and 8-direction resize
@@ -55,6 +61,8 @@ Virtual files live in IndexedDB. Optional **local folders** are mounted through 
 | State | Zustand |
 | Styles | Tailwind CSS |
 | Storage | IndexedDB (+ File System Access handles) |
+| Private API | Node.js 24 built-in HTTP server |
+| Server storage | SQLite + protected icon files |
 | Unit tests | Vitest + jsdom |
 | E2E | Playwright |
 
@@ -67,16 +75,34 @@ npm run dev
 
 Open the printed local URL (default `http://localhost:5173`).
 
+On the first run, the terminal prints a one-time setup token. Enter that token on the WebOS setup screen, then create the single owner account. Passwords require at least 12 characters.
+
+Node.js 24.10 or newer is required because WebOS uses the built-in Argon2id and SQLite APIs.
+
 ### Scripts
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start Vite dev server |
+| `npm run dev` | Start the Vite frontend and local API server |
+| `npm run server` | Start the production Node server |
 | `npm run build` | Typecheck + production build |
 | `npm run preview` | Serve the production build |
 | `npm run lint` | ESLint (zero warnings allowed) |
 | `npm test` | Vitest unit tests |
 | `npm run test:e2e` | Playwright end-to-end suite |
+
+## Docker deployment
+
+```bash
+docker compose up -d --build
+docker compose logs webos
+```
+
+Open `http://localhost:8080`. Copy the first-run setup token from the logs. For internet-facing deployments, put WebOS behind an HTTPS reverse proxy and set `WEBOS_APP_ORIGIN` to the exact public origin.
+
+The `webos-data` volume contains `webos.db` and uploaded application icons. Back up this volume while the container is stopped, or copy the SQLite database with a SQLite-aware backup tool.
+
+Production session cookies use `Secure`, `HttpOnly`, and `SameSite=Strict`. The application list, settings, icons, and write APIs all require a valid server session.
 
 ## Architecture
 
@@ -102,6 +128,14 @@ src/
     windowManager.ts
     ...
   types/fs.ts           # FileSystemProvider + FSEntry types
+```
+
+```text
+server/
+  index.mjs             # HTTP server and runtime configuration
+  app.mjs               # Authentication, CSRF, dashboard and icon routes
+  db.mjs                # SQLite schema and persistence operations
+  security.mjs          # Argon2id and opaque session token helpers
 ```
 
 ### Design principles
@@ -157,6 +191,7 @@ E2E mounts a mock directory via `window.__webosTest` (no real disk picker in CI)
 
 | File | Scene |
 |------|--------|
+| `00-lock-screen.png` | Private lock screen |
 | `01-desktop.png` | Desktop + dock |
 | `02-calculator.png` | Calculator |
 | `03-terminal.png` | Terminal |
@@ -171,8 +206,15 @@ E2E mounts a mock directory via `window.__webosTest` (no real disk picker in CI)
 | `12-video-player.png` | Video Player |
 | `13-quick-look.png` | Quick Look overlay |
 | `14-permission-required.png` | Permission needed state |
+| `15-launchpad.png` | Application Launchpad |
+| `16-app-manager.png` | Add Application window |
 
 ## Safety
+
+- Single-user authentication gates all dashboard and settings APIs
+- Argon2id password hashes; random server-side sessions; CSRF and origin checks
+- Protected uploads accept bounded PNG, JPEG, WebP, and GIF files
+- HTTPS-only secure cookies in production
 
 - Explicit user directory selection required before any local access
 - Mounts default to **read-only**; write is a separate confirmed toggle

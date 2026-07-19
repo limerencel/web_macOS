@@ -7,6 +7,7 @@
 
 import { create } from 'zustand';
 import { load, persist } from '../services/db';
+import { apiRequest, jsonBody } from '../services/api';
 
 const SETTINGS_KEY = 'settings-v1';
 
@@ -143,15 +144,31 @@ function applySettings(s: Settings): void {
   root.classList.toggle('reduce-motion', s.reducedMotion);
 }
 
+async function syncSettings(settings: Settings): Promise<void> {
+  try {
+    await apiRequest('/api/settings', { method: 'PATCH', ...jsonBody(settings) });
+  } catch {
+    // IndexedDB remains the offline fallback until the next authenticated load.
+  }
+}
+
 export const useSettings = create<SettingsStoreState>((set, get) => ({
   settings: DEFAULT_SETTINGS,
   ready: false,
 
   init: async () => {
     const saved = await load<Partial<Settings>>(SETTINGS_KEY);
-    const merged: Settings = { ...DEFAULT_SETTINGS, ...saved, wallpaperImage: saved?.wallpaperImage ?? null };
+    let remote: Partial<Settings> | undefined;
+    try {
+      remote = (await apiRequest<{ settings: Partial<Settings> }>('/api/settings')).settings;
+    } catch {
+      remote = undefined;
+    }
+    const source = remote && Object.keys(remote).length > 0 ? remote : saved;
+    const merged: Settings = { ...DEFAULT_SETTINGS, ...source, wallpaperImage: source?.wallpaperImage ?? null };
     set({ settings: merged, ready: true });
     applySettings(merged);
+    void persist(SETTINGS_KEY, merged);
     // React to system theme changes when in system mode
     if (typeof window !== 'undefined' && window.matchMedia) {
       window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
@@ -169,6 +186,7 @@ export const useSettings = create<SettingsStoreState>((set, get) => ({
     set({ settings: next });
     applySettings(next);
     void persist(SETTINGS_KEY, next);
+    void syncSettings(next);
   },
 
   setWallpaperImage: (dataUrl) => {
@@ -180,6 +198,7 @@ export const useSettings = create<SettingsStoreState>((set, get) => ({
     set({ settings: next });
     applySettings(next);
     void persist(SETTINGS_KEY, next);
+    void syncSettings(next);
   },
 
   clearWallpaperImage: () => {
@@ -193,5 +212,6 @@ export const useSettings = create<SettingsStoreState>((set, get) => ({
     set({ settings: next });
     applySettings(next);
     void persist(SETTINGS_KEY, next);
+    void syncSettings(next);
   },
 }));

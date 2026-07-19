@@ -14,6 +14,14 @@ async function waitDesktop(page: Page) {
   await page.waitForTimeout(400);
 }
 
+async function unlock(page: Page) {
+  const lock = page.getByTestId('lock-screen');
+  await lock.waitFor({ state: 'visible', timeout: 15_000 });
+  await page.getByTestId('lock-password').fill('WebOS-Test-Password-123');
+  await page.getByRole('button', { name: 'Unlock WebOS' }).click();
+  await waitDesktop(page);
+}
+
 async function launchFromDock(page: Page, name: string) {
   await page.getByRole('button', { name: `Launch ${name}` }).click();
 }
@@ -55,7 +63,7 @@ test.describe('Local-first filesystem', () => {
       }
     });
     await page.reload();
-    await waitDesktop(page);
+    await unlock(page);
   });
 
   test('mounts mocked directory and navigates folders', async ({ page }) => {

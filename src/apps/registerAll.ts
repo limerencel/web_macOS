@@ -14,6 +14,7 @@ import {
   AboutIcon,
   PreviewIcon,
   VideoPlayerIcon,
+  GenericAppIcon,
 } from '../components/icons/AppIcons';
 import { registerDefaultAssociations } from '../services/fileAssociations';
 
@@ -135,5 +136,31 @@ export function registerAllApps(): void {
     singleInstance: true,
     searchable: true,
     description: 'About WebOS',
+  });
+
+  registerApp({
+    id: 'app-manager',
+    name: 'Add Application',
+    icon: GenericAppIcon,
+    component: lazyApp(() => import('./AppManager')),
+    defaultWidth: 680,
+    defaultHeight: 720,
+    showInDock: false,
+    singleInstance: true,
+    searchable: false,
+    description: 'Add or edit a dashboard application',
+  });
+
+  registerApp({
+    id: 'remote-frame',
+    name: 'Web Application',
+    icon: GenericAppIcon,
+    component: lazyApp(() => import('./RemoteFrame')),
+    defaultWidth: 1000,
+    defaultHeight: 680,
+    showInDock: false,
+    singleInstance: false,
+    searchable: false,
+    description: 'Embedded web application',
   });
 }

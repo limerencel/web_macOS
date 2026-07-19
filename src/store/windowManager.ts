@@ -41,6 +41,7 @@ interface WindowManagerState {
   setTitle: (id: string, title: string) => void;
   setPayload: (id: string, payload: Record<string, unknown>) => void;
   closeByApp: (appId: string) => void;
+  closeAll: () => void;
   findByApp: (appId: string) => WindowState | undefined;
 }
 
@@ -84,12 +85,12 @@ export const useWindowManager = create<WindowManagerState>((set, get) => ({
     }
     const id = makeId();
     const z = get().topZ + 1;
-    const width = opts.width ?? DEFAULT_W;
-    const height = opts.height ?? DEFAULT_H;
-    // Center-ish with a small cascade so stacked windows don't perfectly overlap
-    const offset = (get().windows.length % 6) * 28;
     const vw = typeof window !== 'undefined' ? window.innerWidth : 1280;
     const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+    const width = Math.min(opts.width ?? DEFAULT_W, Math.max(320, vw - 24));
+    const height = Math.min(opts.height ?? DEFAULT_H, Math.max(280, vh - 150));
+    // Center-ish with a small cascade so stacked windows don't perfectly overlap
+    const offset = (get().windows.length % 6) * 28;
     const x = opts.x ?? clamp((vw - width) / 2 + offset, 0, vw - 200);
     const y = opts.y ?? clamp(40 + offset, 28, vh - 200);
     const win: WindowState = {
@@ -185,6 +186,8 @@ export const useWindowManager = create<WindowManagerState>((set, get) => ({
   closeByApp: (appId) => {
     set((s) => ({ windows: s.windows.filter((w) => w.appId !== appId) }));
   },
+
+  closeAll: () => set({ windows: [], topZ: 10 }),
 
   findByApp: (appId) => get().windows.find((w) => w.appId === appId),
 }));

@@ -284,4 +284,240 @@ html.reduce-motion .dock-tooltip-fixed {
   animation: none !important;
 }
 
+/* Single-user lock screen */
+.lock-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 50000;
+  overflow: hidden;
+  color: #fff;
+  background:
+    radial-gradient(circle at 72% 20%, rgba(255, 187, 125, 0.75), transparent 28%),
+    radial-gradient(circle at 24% 75%, rgba(74, 126, 255, 0.82), transparent 34%),
+    linear-gradient(145deg, #29143c 0%, #8c2c5b 42%, #d86a3c 72%, #f0bd70 100%);
+  transition: opacity 0.55s ease, transform 0.65s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.55s ease;
+}
 
+.lock-screen::before {
+  content: '';
+  position: absolute;
+  inset: -30px;
+  background:
+    radial-gradient(ellipse at 20% 25%, rgba(75, 54, 191, 0.75), transparent 42%),
+    radial-gradient(ellipse at 82% 68%, rgba(255, 131, 75, 0.7), transparent 46%);
+  filter: blur(26px);
+  animation: lockAmbient 12s ease-in-out infinite alternate;
+}
+
+.lock-screen-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.18), transparent 36%, rgba(0, 0, 0, 0.18));
+  backdrop-filter: blur(3px) saturate(118%);
+}
+
+.lock-clock {
+  position: absolute;
+  top: clamp(36px, 7vh, 82px);
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.25);
+}
+
+.lock-date {
+  font-size: clamp(17px, 1.6vw, 22px);
+  font-weight: 550;
+  letter-spacing: -0.02em;
+}
+
+.lock-time {
+  margin-top: -4px;
+  font-size: clamp(72px, 10vw, 132px);
+  line-height: 1;
+  font-weight: 650;
+  letter-spacing: -0.065em;
+}
+
+.lock-login {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(62px, 9vh, 108px);
+  width: min(360px, calc(100vw - 40px));
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.5s ease;
+}
+
+.lock-avatar {
+  width: 104px;
+  height: 104px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  cursor: default;
+  background: linear-gradient(145deg, rgba(255,255,255,.92), rgba(205,219,255,.78));
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  box-shadow: 0 12px 38px rgba(0, 0, 0, 0.3), inset 0 1px rgba(255,255,255,.7);
+}
+
+.lock-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.lock-avatar span { color: #4d4b62; font-size: 45px; font-weight: 600; }
+.lock-avatar input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.lock-login:has(.lock-setup-fields) .lock-avatar { cursor: pointer; }
+.lock-login h1 { margin: 13px 0 11px; font-size: 20px; line-height: 1.2; font-weight: 650; text-shadow: 0 1px 8px #0006; }
+
+.lock-password-wrap {
+  position: relative;
+  width: 240px;
+}
+
+.lock-password-wrap input,
+.lock-confirm,
+.lock-setup-fields input {
+  width: 100%;
+  height: 34px;
+  padding: 0 38px 0 13px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.17);
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 9px;
+  outline: none;
+  box-shadow: 0 3px 14px rgba(0,0,0,.15), inset 0 1px rgba(255,255,255,.1);
+  backdrop-filter: blur(20px) saturate(160%);
+  font-size: 13px;
+}
+
+.lock-password-wrap input:focus,
+.lock-confirm:focus,
+.lock-setup-fields input:focus { border-color: rgba(255,255,255,.82); box-shadow: 0 0 0 3px rgba(255,255,255,.15); }
+.lock-password-wrap input::placeholder,
+.lock-confirm::placeholder,
+.lock-setup-fields input::placeholder { color: rgba(255,255,255,.68); }
+.lock-password-wrap button { position: absolute; right: 5px; top: 5px; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 999px; color: rgba(255,255,255,.92); background: rgba(255,255,255,.2); border: 1px solid rgba(255,255,255,.32); font-size: 17px; line-height: 1; }
+.lock-password-wrap button:disabled { opacity: .8; }
+.lock-confirm { width: 240px; margin-top: 7px; padding-right: 13px; }
+.lock-setup-fields { width: 240px; display: grid; gap: 7px; margin-bottom: 7px; }
+.lock-setup-fields input { padding-right: 13px; }
+.lock-message { min-height: 18px; margin-top: 8px; font-size: 12px; color: rgba(255,255,255,.78); text-shadow: 0 1px 5px #0007; }
+.lock-spinner { width: 13px; height: 13px; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; animation: lockSpin .7s linear infinite; }
+.lock-screen-unlocking .lock-login { transform: translateX(-50%) scale(.88) translateY(18px); opacity: 0; }
+.lock-screen-unlocking { filter: blur(1px); }
+.lock-shake { animation: lockShake .48s cubic-bezier(.36,.07,.19,.97); }
+.lock-actions { position: absolute; right: 24px; bottom: 20px; display: flex; gap: 9px; color: rgba(255,255,255,.78); font-size: 11px; text-shadow: 0 1px 4px #0008; }
+.lock-actions button { min-width: 58px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.lock-actions button span { width: 25px; height: 25px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.25); font-size: 14px; transition: background .15s, transform .15s; }
+.lock-actions button:hover span { background: rgba(255,255,255,.3); transform: scale(1.06); }
+
+.shutdown-screen { position: fixed; inset: 0; display: grid; place-items: center; background: #000; }
+.shutdown-screen button { width: 56px; height: 56px; display: grid; place-items: center; border-radius: 50%; color: #aaa; border: 1px solid #383838; background: #151515; transition: color .2s, border-color .2s, transform .2s; }
+.shutdown-screen button:hover { color: #fff; border-color: #777; transform: scale(1.06); }
+.shutdown-screen button span { font-size: 25px; }
+
+@keyframes lockSpin { to { transform: rotate(360deg); } }
+@keyframes lockShake { 10%, 90% { margin-left: -2px; } 20%, 80% { margin-left: 4px; } 30%, 50%, 70% { margin-left: -7px; } 40%, 60% { margin-left: 7px; } }
+@keyframes lockAmbient { from { transform: scale(1) translate3d(-1%, 0, 0); } to { transform: scale(1.08) translate3d(1%, -1%, 0); } }
+
+/* Launchpad */
+.launchpad { position: fixed; inset: 0; z-index: 19000; color: #fff; animation: launchpadIn .28s cubic-bezier(.2,.8,.2,1); }
+.launchpad-backdrop { position: absolute; inset: 0; background: var(--wallpaper); filter: blur(20px) brightness(.56) saturate(120%); transform: scale(1.08); }
+.launchpad-backdrop::after { content: ''; position: absolute; inset: 0; background: rgba(12, 14, 25, .28); }
+.launchpad-content { position: relative; height: 100%; overflow-y: auto; padding: 52px clamp(30px, 8vw, 130px) 120px; }
+.launchpad-search { width: min(240px, 80vw); height: 30px; margin: 0 auto 42px; display: flex; align-items: center; gap: 7px; padding: 0 10px; border-radius: 8px; color: rgba(255,255,255,.7); background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.18); backdrop-filter: blur(20px); }
+.launchpad-search input { width: 100%; color: #fff; background: transparent; border: 0; outline: 0; text-align: center; font-size: 13px; }
+.launchpad-search input::placeholder { color: rgba(255,255,255,.65); }
+.launchpad section { max-width: 1120px; margin: 0 auto 32px; }
+.launchpad section h2 { margin: 0 0 12px 8px; color: rgba(255,255,255,.72); font-size: 13px; font-weight: 600; letter-spacing: .02em; }
+.launchpad-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 24px clamp(12px, 2.8vw, 34px); }
+.launchpad-item { min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; color: #fff; background: transparent; border: 0; text-shadow: 0 1px 6px rgba(0,0,0,.8); font-size: 12px; }
+.launchpad-item > span:last-child { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.launchpad-icon { display: grid; place-items: center; transition: transform .18s ease, filter .18s ease; filter: drop-shadow(0 8px 10px rgba(0,0,0,.25)); }
+.launchpad-item:hover .launchpad-icon { transform: scale(1.08) translateY(-2px); filter: drop-shadow(0 12px 14px rgba(0,0,0,.32)); }
+.launchpad-item:active .launchpad-icon { transform: scale(.96); }
+.launchpad-add-icon { width: 68px; height: 68px; display: grid; place-items: center; border-radius: 22%; color: rgba(255,255,255,.9); border: 1px dashed rgba(255,255,255,.55); background: rgba(255,255,255,.13); backdrop-filter: blur(12px); font-size: 34px; font-weight: 200; box-shadow: inset 0 1px rgba(255,255,255,.16); }
+.launchpad-empty { margin-top: 14vh; text-align: center; color: rgba(255,255,255,.65); }
+.launchpad-menu { position: fixed; z-index: 19500; width: 190px; padding: 5px; border-radius: 10px; color: #1d1d1f; background: rgba(245,245,247,.93); border: 1px solid rgba(255,255,255,.5); box-shadow: 0 16px 42px rgba(0,0,0,.32); backdrop-filter: blur(28px) saturate(170%); }
+.launchpad-menu button { width: 100%; padding: 6px 9px; border-radius: 6px; text-align: left; font-size: 12px; }
+.launchpad-menu button:hover { color: #fff; background: rgb(var(--accent-rgb)); }
+.launchpad-menu button.danger { color: #ff3b30; }
+.launchpad-menu button.danger:hover { color: #fff; background: #ff3b30; }
+.launchpad-menu div { height: 1px; margin: 4px; background: rgba(0,0,0,.1); }
+@keyframes launchpadIn { from { opacity: 0; transform: scale(1.08); } to { opacity: 1; transform: scale(1); } }
+
+/* Remote icons and app manager */
+.remote-app-icon { display: inline-grid; place-items: center; flex-shrink: 0; color: #fff; font-weight: 700; letter-spacing: -.06em; line-height: 1; text-shadow: 0 1px 3px rgba(0,0,0,.25); box-shadow: inset 0 1px rgba(255,255,255,.35); }
+.app-manager { height: 100%; overflow-y: auto; padding: 24px 26px; color: #1d1d1f; background: rgba(247,247,249,.98); }
+html.dark .app-manager { color: #f5f5f7; background: rgba(30,30,32,.98); }
+.app-manager-heading { display: flex; align-items: center; gap: 17px; margin-bottom: 22px; }
+.app-manager-heading h1 { margin: 0 0 3px; font-size: 23px; font-weight: 650; letter-spacing: -.025em; }
+.app-manager-heading p { margin: 0; color: #77777c; font-size: 13px; }
+.app-manager-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+.app-manager label > span:first-child, .app-manager legend { display: block; margin-bottom: 5px; color: #6e6e73; font-size: 11px; font-weight: 650; }
+.app-manager input[type='text'], .app-manager input[type='url'], .app-manager-grid input, .app-manager textarea { width: 100%; border: 1px solid rgba(0,0,0,.16); border-radius: 7px; background: rgba(255,255,255,.82); padding: 8px 10px; color: #1d1d1f; outline: none; font-size: 13px; }
+html.dark .app-manager input[type='text'], html.dark .app-manager input[type='url'], html.dark .app-manager-grid input, html.dark .app-manager textarea { color: #fff; background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.14); }
+.app-manager input:focus, .app-manager textarea:focus { border-color: rgb(var(--accent-rgb)); box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .16); }
+.app-manager textarea { resize: vertical; }
+.app-manager-wide { grid-column: 1 / -1; }
+.app-manager fieldset { margin-top: 18px; padding: 0; border: 0; }
+.app-manager-presets { display: flex; flex-wrap: wrap; gap: 8px; }
+.app-manager-presets button, .app-manager-upload { width: 50px; height: 50px; display: grid; place-items: center; border-radius: 11px; border: 2px solid transparent; background: rgba(0,0,0,.04); cursor: pointer; }
+html.dark .app-manager-presets button, html.dark .app-manager-upload { background: rgba(255,255,255,.06); }
+.app-manager-presets .selected, .app-manager-upload.selected { border-color: rgb(var(--accent-rgb)); }
+.app-manager-upload span { margin: 0 !important; color: #777 !important; font-size: 24px !important; font-weight: 300 !important; }
+.app-manager-upload input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.app-manager-behavior > div { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.app-manager-behavior label { display: flex; gap: 7px; align-items: flex-start; min-height: 58px; padding: 9px; border: 1px solid rgba(0,0,0,.12); border-radius: 9px; cursor: pointer; }
+html.dark .app-manager-behavior label { border-color: rgba(255,255,255,.12); }
+.app-manager-behavior label.selected { border-color: rgb(var(--accent-rgb)); background: rgb(var(--accent-rgb) / .08); }
+.app-manager-behavior label span, .app-manager-pin span { display: flex; flex-direction: column; }
+.app-manager strong { font-size: 12px; font-weight: 600; }
+.app-manager small { margin-top: 2px; color: #86868b; font-size: 10px; }
+.app-manager-pin { display: flex; align-items: flex-start; gap: 8px; margin-top: 17px; cursor: pointer; }
+.app-manager-footer { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 22px; padding-top: 14px; border-top: 1px solid rgba(0,0,0,.1); }
+html.dark .app-manager-footer { border-color: rgba(255,255,255,.1); }
+.app-manager-footer p { flex: 1; margin: 0; color: #ff3b30; font-size: 11px; }
+.app-manager-footer button, .settings-account button, .settings-password button { min-width: 84px; padding: 7px 12px; border-radius: 7px; background: rgba(0,0,0,.07); font-size: 12px; font-weight: 550; }
+html.dark .app-manager-footer button, html.dark .settings-account button, html.dark .settings-password button { background: rgba(255,255,255,.1); }
+.app-manager-footer button.primary { color: #fff; background: rgb(var(--accent-rgb)); }
+.app-manager-footer button:disabled { opacity: .55; }
+
+.dock-separator { width: 1px; height: 48px; margin: 0 7px 8px; background: rgba(255,255,255,.24); }
+.dock-static-item { transition: transform .18s ease; }
+.dock-static-item:hover { transform: translateY(-5px) scale(1.08); }
+.dock-launchpad-grid { width: 50px; height: 50px; padding: 9px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; background: linear-gradient(145deg, rgba(255,255,255,.92), rgba(214,219,230,.78)); }
+.dock-launchpad-grid i { border-radius: 3px; background: linear-gradient(145deg, #6d7bff, #b056d6); }
+
+.settings-account { display: flex; align-items: center; gap: 14px; }
+.settings-avatar { position: relative; width: 64px; height: 64px; display: grid; place-items: center; overflow: hidden; flex-shrink: 0; border-radius: 50%; color: #fff; background: linear-gradient(145deg, #64d2ff, #5e5ce6); cursor: pointer; font-size: 28px; font-weight: 600; }
+.settings-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.settings-avatar input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.settings-account-fields { display: flex; align-items: flex-end; gap: 7px; flex: 1; }
+.settings-account-fields label { flex: 1; }
+.settings-account-fields label span { display: block; margin-bottom: 4px; color: #86868b; font-size: 11px; }
+.settings-account-fields input, .settings-password input { width: 100%; padding: 7px 9px; border: 1px solid rgba(0,0,0,.14); border-radius: 7px; background: rgba(255,255,255,.7); font-size: 12px; }
+.settings-wallpaper-upload { position: relative; min-width: 102px; padding: 7px 10px; border-radius: 7px; text-align: center; background: rgba(0,0,0,.07); font-size: 11px; font-weight: 550; cursor: pointer; }
+html.dark .settings-wallpaper-upload { background: rgba(255,255,255,.1); }
+.settings-wallpaper-upload input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+html.dark .settings-account-fields input, html.dark .settings-password input { border-color: rgba(255,255,255,.13); background: rgba(255,255,255,.08); }
+.settings-password { display: grid; grid-template-columns: 1fr 1fr auto; gap: 7px; margin-top: 13px; }
+.settings-account-message { margin-top: 7px; color: #86868b; font-size: 11px; }
+
+@media (max-width: 700px) {
+  .lock-time { font-size: 72px; }
+  .lock-login { bottom: 50px; }
+  .lock-login:has(.lock-setup-fields) { bottom: 28px; }
+  .lock-login:has(.lock-setup-fields) .lock-avatar { width: 70px; height: 70px; }
+  .launchpad-content { padding-left: 24px; padding-right: 24px; }
+  .launchpad-grid { grid-template-columns: repeat(3, 1fr); gap: 22px 10px; }
+  .app-manager-grid, .app-manager-behavior > div { grid-template-columns: 1fr; }
+  .settings-account-fields, .settings-password { display: grid; grid-template-columns: 1fr; }
+}
+
+.system-menu { position: fixed; left: 8px; top: 29px; z-index: 11000; width: 210px; padding: 5px; color: #1d1d1f; background: rgba(244,244,246,.9); border: 1px solid rgba(255,255,255,.58); border-radius: 9px; box-shadow: 0 14px 34px rgba(0,0,0,.28); backdrop-filter: blur(28px) saturate(180%); }
+.system-menu button { display: block; width: 100%; padding: 5px 9px; border-radius: 5px; text-align: left; font-size: 12px; }
+.system-menu button:hover { color: #fff; background: rgb(var(--accent-rgb)); }
+.system-menu div { height: 1px; margin: 4px; background: rgba(0,0,0,.1); }
